@@ -74,7 +74,7 @@
 #define configMAX_PRIORITIES		(  5 )
 #define configUSE_TICK_HOOK			0
 #define configCPU_CLOCK_HZ			( ( unsigned long ) SystemCoreClock )
-#define configTICK_RATE_HZ			( ( portTickType ) 100000 )
+#define configTICK_RATE_HZ			( ( portTickType ) 1000)
 #define configMINIMAL_STACK_SIZE	( ( unsigned short ) 128 )
 
 #ifdef __CODE_RED
