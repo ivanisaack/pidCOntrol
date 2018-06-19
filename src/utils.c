@@ -7,28 +7,6 @@
 
 #include "utils.h"
 
-void delayConfigII( delayTick_t * delay, tick_t duration ){
-   delay->duration = duration/portTICK_RATE_MS;
-   delay->running = 0;
-}
-
-bool_t delayReadII( delayTick_t * delay ){
-
-   bool_t timeArrived = 0;
-
-   if( !delay->running ){
-      delay->startTime = xTaskGetTickCount();
-      delay->running = 1;
-   }
-   else{
-      if ( (tick_t)(xTaskGetTickCount() - delay->startTime) >= delay->duration ){
-         timeArrived = 1;
-         delay->running = 0;
-      }
-   }
-
-   return timeArrived;
-}
 
 
 char* itoa(int value, char* result, int base) {

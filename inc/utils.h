@@ -7,6 +7,7 @@
 #define MAX_CRITICAL_TEMP 3.2
 #define temperatureDataLen 1
 
+
 typedef struct {
 	tick_t startTime;
 	tick_t duration;

@@ -8,12 +8,14 @@
 #include "pid.h"
 #include "filter.h"
 #include "utils.h"
+#include "mainProgramUtils.h"
 
 DEBUG_PRINT_ENABLE
 ;
+
 #define	vPrintString(str) debugPrintString(str)
 
-static float tempTarget = 0.0;
+float tempTarget = 0.0;
 control_pid_t pid;
 
 const char *pcTextForMain = "\r\n PIDControl \r\n";
@@ -21,15 +23,10 @@ const char *pcTextForMain = "\r\n PIDControl \r\n";
 /* Sets up system hardware */
 static void prvSetupHardware(void);
 
-/* The tasks to be created. */
-static void vAlarmTask(void *pvParameters);
 static void vControlTask(void *pvParameters);
+static void vAlarmTask(void *pvParameters);
 static void vMainProgramTask(void *pvParameters);
 
-/*-----------------------------------------------------------*/
-
-/* Declare a variable of type QueueHandle_t.  This is used to store the queue
- that is accessed by all three tasks. */
 QueueHandle_t xTempPresuQueue;
 
 /* Sets up system hardware */
@@ -57,10 +54,10 @@ int main(void) {
 	/* The queue is created to hold a maximum of 100 uint16_t values. */
 	xTempPresuQueue = xQueueCreate(1, sizeof(float));
 
-	xTaskCreate(vControlTask, "ControlTask", 1000, NULL, 2, NULL);
 	xTaskCreate(vMainProgramTask, "MainProgramTask", 1000, NULL, 1, NULL);
+	xTaskCreate(vControlTask, "ControlTask", 1000, NULL, 2, NULL);
 	xTaskCreate(vAlarmTask, "AlarmTask", 1000, NULL, 3, NULL);
-	/* Start the scheduler so the created tasks start executing. */
+
 	vTaskStartScheduler();
 
 	/* The following line should never be reached because vTaskStartScheduler()
@@ -76,7 +73,7 @@ int main(void) {
 
 static void vMainProgramTask(void *pvParameters) {
 
-	const TickType_t xDelay1ms = 1UL / portTICK_RATE_MS;
+	const TickType_t xDelayUart1ms = 1UL / portTICK_RATE_MS;
 
 	BaseType_t xStatus;
 	char str[20];
@@ -84,21 +81,25 @@ static void vMainProgramTask(void *pvParameters) {
 	float tempTarg = 0.0;
 	uint8_t dataUart;
 	float muestra = 0;
-	size_t i = 0;
+	static size_t i = 0;
+
 	/* As per most tasks, this task is implemented within an infinite loop. */
 	for (;;) {
-		/* LED state is toggled, keep a live */
 		gpioToggle(LED1);
 
 		i = 0;
-		while (uartReadByte(UART_USB, &dataUart) && i < 5) {
+		if (processSerialPort(str)) {
+			vPrintString(str);
+			vPrintString("\r\n");
+		}
+	/*	while (uartReadByte(UART_USB, &dataUart) && i < 5) {
 			auxFloat[i] = dataUart;
 			i++;
 			//vPrintString(itoa(i,str,10));
 			//vPrintString(" es i \r\n");
-			vTaskDelay(xDelay1ms);
+			vTaskDelay(xDelayUart1ms);
 
-		}
+		}*/
 		if (i == 5) {
 			tempTarg = atof(auxFloat);
 			i = 0;
@@ -123,20 +124,15 @@ static void vMainProgramTask(void *pvParameters) {
 		}
 	}
 }
-/*-----------------------------------------------------------*/
 
 static void vControlTask(void *pvParameters) {
-
-	/* Declare the variable that will hold the values received from the queue. */
 
 	BaseType_t xStatus;
 
 	TickType_t xLastWakeTime, xLastUartSend;
-	/*	const TickType_t xDelay5ms = pdMS_TO_TICKS( 3UL );
-	 Not available in the freeRTOS version included in the firmware_v2 modules */
+
 	const TickType_t xDelay1ms = 1UL / portTICK_RATE_MS;
 	const TickType_t xDelay500ms = 500UL / portTICK_RATE_MS;
-//delayTick_t delayUart;
 
 	float B, E, X;
 
@@ -153,15 +149,14 @@ static void vControlTask(void *pvParameters) {
 
 	xLastWakeTime = xTaskGetTickCount();
 	xLastUartSend = xLastWakeTime;
-//delayConfigII(&delayUart, 1000);
 
 	/* This task is also defined within an infinite loop. */
 	for (;;) {
-		/* LED state is toggled, keep a live */
+
 		gpioToggle(LED2);
 
 		E = tempTarget - B;
-//		stdioPrintf(UART_USB, "error: %f\r\n",(uint16_t)E );
+		//		stdioPrintf(UART_USB, "error: %f\r\n",(uint16_t)E );
 
 		X = PID_Process(&pid, E);
 		X = (3.3 < X) ? 3.3 : X;
@@ -184,14 +179,12 @@ static void vControlTask(void *pvParameters) {
 
 static void vAlarmTask(void *pvParameters) {
 
-
 	TickType_t xLastWakeTime;
 	const TickType_t xDelay1s = 1000UL / portTICK_RATE_MS;
 
 	float tempPresuControl = 0.0;
 
 	xLastWakeTime = xTaskGetTickCount();
-
 
 	for (;;) {
 
@@ -216,4 +209,6 @@ static void vAlarmTask(void *pvParameters) {
 	}
 
 }
+
+/*-----------------------------------------------------------*/
 
