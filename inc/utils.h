@@ -7,6 +7,11 @@
 #define MAX_CRITICAL_TEMP 3.2
 #define temperatureDataLen 1
 
+#define xDelayUart1ms  ( (TickType_t) 1UL / portTICK_RATE_MS)
+#define xDelay1ms  ( (TickType_t) 1UL / portTICK_RATE_MS)
+#define xDelay500ms  ( (TickType_t) 500UL / portTICK_RATE_MS)
+#define xDelay1s  ( (TickType_t) 1000UL / portTICK_RATE_MS)
+
 
 typedef struct {
 	tick_t startTime;

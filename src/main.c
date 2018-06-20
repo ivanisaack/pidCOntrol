@@ -9,14 +9,16 @@
 #include "filter.h"
 #include "utils.h"
 #include "mainProgramUtils.h"
+#include "nectar.h"
 
-DEBUG_PRINT_ENABLE
-;
+//DEBUG_PRINT_ENABLE
+//;
 
-#define	vPrintString(str) debugPrintString(str)
+//#define	vPrintString(str) debugPrintString(str)
 
 float tempTarget = 0.0;
 control_pid_t pid;
+nectar_target_param_t nectarTarget;
 
 const char *pcTextForMain = "\r\n PIDControl \r\n";
 
@@ -33,7 +35,7 @@ QueueHandle_t xTempPresuQueue;
 static void prvSetupHardware(void) {
 	/* Sets up system hardware */
 	boardConfig();
-	debugPrintConfigUart(UART_USB, 115200);
+	uartConfig(UART_USB, 115200);
 
 	adcConfig(ADC_ENABLE); /* ADC */
 
@@ -73,39 +75,42 @@ int main(void) {
 
 static void vMainProgramTask(void *pvParameters) {
 
-	const TickType_t xDelayUart1ms = 1UL / portTICK_RATE_MS;
-
 	BaseType_t xStatus;
-	char str[20];
+
 	char auxFloat[4];
 	float tempTarg = 0.0;
 	uint8_t dataUart;
+	char strQueque[20];
 	float muestra = 0;
 	static size_t i = 0;
+
 
 	/* As per most tasks, this task is implemented within an infinite loop. */
 	for (;;) {
 		gpioToggle(LED1);
 
 		i = 0;
-		if (processSerialPort(str)) {
-			vPrintString(str);
-			vPrintString("\r\n");
-		}
-	/*	while (uartReadByte(UART_USB, &dataUart) && i < 5) {
-			auxFloat[i] = dataUart;
-			i++;
-			//vPrintString(itoa(i,str,10));
-			//vPrintString(" es i \r\n");
-			vTaskDelay(xDelayUart1ms);
+		if (processSerialPort(&nectarTarget)) {
 
-		}*/
+			vPrintNumber(nectarTarget.tempExt);
+			vPrintString("\r\n");
+
+		}
+
+		/*	while (uartReadByte(UART_USB, &dataUart) && i < 5) {
+		 auxFloat[i] = dataUart;
+		 i++;
+		 //vPrintString(itoa(i,str,10));
+		 //vPrintString(" es i \r\n");
+		 vTaskDelay(xDelayUart1ms);
+
+		 }*/
 		if (i == 5) {
 			tempTarg = atof(auxFloat);
 			i = 0;
 			ftoa(tempTarg, auxFloat, 2);
-			//vPrintString(auxFloat);
-			//vPrintString("\r\n");
+			vPrintString(auxFloat);
+			vPrintString("\r\n");
 			tempTarget = tempTarg;
 		}
 		//stdioPrintf(UART_USB, "data: %c \r\n", dataUart);
@@ -114,13 +119,10 @@ static void vMainProgramTask(void *pvParameters) {
 
 		if (xStatus == pdPASS) {
 
-			ftoa(muestra, str, 4);
-			vPrintString(str);
+			ftoa(muestra, strQueque, 4);
+			vPrintString(strQueque);
 			vPrintString("\r\n");
-			/* Data was successfully received from the queue, print out the received
-			 value. */
-			//vPrintStringAndNumber("Received = ", lReceivedValue);
-			//stdioPrintf(UART_USB, "%f\r\n", 1.0);
+
 		}
 	}
 }
@@ -130,9 +132,6 @@ static void vControlTask(void *pvParameters) {
 	BaseType_t xStatus;
 
 	TickType_t xLastWakeTime, xLastUartSend;
-
-	const TickType_t xDelay1ms = 1UL / portTICK_RATE_MS;
-	const TickType_t xDelay500ms = 500UL / portTICK_RATE_MS;
 
 	float B, E, X;
 
@@ -180,7 +179,6 @@ static void vControlTask(void *pvParameters) {
 static void vAlarmTask(void *pvParameters) {
 
 	TickType_t xLastWakeTime;
-	const TickType_t xDelay1s = 1000UL / portTICK_RATE_MS;
 
 	float tempPresuControl = 0.0;
 
