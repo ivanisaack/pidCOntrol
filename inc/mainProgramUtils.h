@@ -34,6 +34,7 @@ typedef enum {
 	tPasoDinamico = 7,
 	nCiclos = 8,
 	flujoSalida = 9
+	//TODO: AGREGAR ACTIVAR CONTROL, ELEGIR PID, KP,KI,KD
 
 } comProtocolVar_t;
 

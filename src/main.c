@@ -9,6 +9,7 @@
 #include "filter.h"
 #include "utils.h"
 #include "mainProgramUtils.h"
+#include "controlUtils.h"
 #include "nectar.h"
 
 //DEBUG_PRINT_ENABLE
@@ -17,7 +18,6 @@
 //#define	vPrintString(str) debugPrintString(str)
 
 float tempTarget = 0.0;
-control_pid_t pid;
 static nectar_target_param_t nectarTarget;
 
 const char *pcTextForMain = "\r\n PIDControl \r\n";
@@ -76,46 +76,13 @@ int main(void) {
 static void vMainProgramTask(void *pvParameters) {
 
 	BaseType_t xStatus;
-
-	char auxFloat[4];
-	float tempTarg = 0.0;
-	uint8_t dataUart;
 	char strQueque[20];
 	float muestra = 0;
-	static size_t i = 0;
-
+	bool_t processSerialResult;
 	/* As per most tasks, this task is implemented within an infinite loop. */
 	for (;;) {
-		gpioToggle(LED1);
 
-		i = 0;
-		if (processSerialPort(&nectarTarget)) {
-
-			/*vPrintNumber(nectarTarget.tempExt);
-			vPrintString("\r\n");
-			vPrintString("preison");
-			vPrintNumber(nectarTarget.pExt);
-			vPrintString("\r\n");*/
-
-		}
-
-		/*	while (uartReadByte(UART_USB, &dataUart) && i < 5) {
-		 auxFloat[i] = dataUart;
-		 i++;
-		 //vPrintString(itoa(i,str,10));
-		 //vPrintString(" es i \r\n");
-		 vTaskDelay(xDelayUart1ms);
-
-		 }*/
-		if (i == 5) {
-			tempTarg = atof(auxFloat);
-			i = 0;
-			ftoa(tempTarg, auxFloat, 2);
-			vPrintString(auxFloat);
-			vPrintString("\r\n");
-			tempTarget = tempTarg;
-		}
-		//stdioPrintf(UART_USB, "data: %c \r\n", dataUart);
+		processSerialResult = processSerialPort(&nectarTarget);
 
 		xStatus = xQueueReceive(xTempPresuQueue, &muestra, 0);
 
@@ -132,21 +99,20 @@ static void vMainProgramTask(void *pvParameters) {
 static void vControlTask(void *pvParameters) {
 
 	BaseType_t xStatus;
-
 	TickType_t xLastWakeTime, xLastUartSend;
 
-	float B, E, X;
+/*--------------INIT CONTROL TEMPERATURA DE EXTRACCION-------------*/
+	control_variable_t tempExtrControlVar;
+	control_pid_t pidTempExtr;
+	float KpTempExtr, KiTempExtr, KdTempExtr, TloopTempExtr;
+	nectarInit(&nectarTarget, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+	KpTempExtr = 1.0;
+	KiTempExtr = 1000.0;
+	KdTempExtr = 0.0;
+	TloopTempExtr = 0.001;
+	PID_Init(&pidTempExtr, KpTempExtr, KiTempExtr, KdTempExtr, TloopTempExtr);
 
-	float Kp, Ki, Kd, Tloop;
-
-	Kp = 1.0;
-	Ki = 1000.0;
-	Kd = 0.0;
-	Tloop = 0.001;
-
-	PID_Init(&pid, Kp, Ki, Kd, Tloop);
-
-	B = 0.0;
+/*-----------------------------------------------------------------*/
 
 	xLastWakeTime = xTaskGetTickCount();
 	xLastUartSend = xLastWakeTime;
@@ -154,25 +120,12 @@ static void vControlTask(void *pvParameters) {
 	/* This task is also defined within an infinite loop. */
 	for (;;) {
 
-		gpioToggle(LED2);
-
-		E = tempTarget - B;
-		//		stdioPrintf(UART_USB, "error: %f\r\n",(uint16_t)E );
-
-		X = PID_Process(&pid, E);
-		X = (3.3 < X) ? 3.3 : X;
-		//	stdioPrintf(UART_USB, "X: %d\r\n",(uint16_t) X );
-
-		dacWrite(DAC, (uint16_t) (X * (1023 / 3.3)));
+		tempExtrControl(&pidTempExtr, &tempExtrControlVar,(float) nectarTarget.tempExt);
 
 		vTaskDelayUntil(&xLastWakeTime, xDelay1ms);
 
-		B = ((float) (adcRead(CH1)) * 3.3) / 1023;
-		//stdioPrintf(UART_USB, "B: %f\r\n",(uint16_t)B );
-
-		//if (delayReadII(&delayUart)) {
 		if ((xTaskGetTickCount() - xLastUartSend) > xDelay500ms) {
-			xStatus = xQueueSendToBack(xTempPresuQueue, &B, 0);
+			xStatus = xQueueSendToBack(xTempPresuQueue, &(tempExtrControlVar.B), 0);
 			xLastUartSend = xTaskGetTickCount();
 		}
 	}
