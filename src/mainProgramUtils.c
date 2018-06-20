@@ -31,7 +31,6 @@ bool_t processSerialPort(nectar_target_param_t *nectarTarget) {
 	size_t commandLen, valueLen;
 
 	size_t uartDataIterator = 0;
-	nectarTarget->pExt = 3;
 
 	while (uartReadByte(UART_USB, &dataUart)) {
 
@@ -62,7 +61,7 @@ bool_t processSerialPort(nectar_target_param_t *nectarTarget) {
 					strncpy(value, &str[commandLen + 2], valueLen);
 					value[valueLen] = '\0';
 
-					parseCommand(	nectarTarget);
+					parseCommand(nectarTarget);
 
 					return true;
 				}
@@ -93,9 +92,7 @@ bool_t parseCommand(nectar_target_param_t *nectarTarget) {
 	if (auxLong != 0) {
 
 		commandVar = auxLong;
-		vPrintString("command var:");
-		vPrintNumber(commandVar);
-		vPrintString("\n");
+
 	}
 	else
 		return false;
@@ -110,47 +107,47 @@ bool_t parseCommand(nectar_target_param_t *nectarTarget) {
 	case tempExt: {
 
 		nectarTarget->tempExt = comValue;
-		break;
+		return true;
 	}
 	case pExt: {
 
 		nectarTarget->pExt = comValue;
-		break;
+		return true;
 	}
 	case tempPresu: {
 
 		nectarTarget->tempPresu = comValue;
-		break;
+		return true;
 	}
 	case pPresu: {
 
-		//nectarTarget->pPresu = comValue;
-		break;
+		nectarTarget->pPresu = comValue;
+		return true;
 	}
 	case tempSalida: {
 
-		//nectarTarget->tempSalida = comValue;
-		break;
+		nectarTarget->tempSalida = comValue;
+		return true;
 	}
 	case tPasoEstatico: {
 
-		//nectarTarget->tPasoEstatico = comValue;
-		break;
+		nectarTarget->tPasoEstatico = comValue;
+		return true;
 	}
 	case tPasoDinamico: {
 
-		//nectarTarget->tPasoDinamico = comValue;
-		break;
+		nectarTarget->tPasoDinamico = comValue;
+		return true;
 	}
 	case nCiclos: {
 
-		//nectarTarget->nCiclos = comValue;
-		break;
+		nectarTarget->nCiclos = comValue;
+		return true;
 	}
 	case flujoSalida: {
 
 		nectarTarget->flujoSalida = comValue;
-		break;
+		return true;
 	}
 	default: {
 		return false;
@@ -167,7 +164,7 @@ bool_t printCommand(nectar_target_param_t *nectarTarget){
 
 		auxLong = strtol(command, &ptr, 10);
 
-		if (!auxLong) {
+		if (auxLong != 0) {
 
 			commandVar = auxLong;
 		} else
@@ -180,47 +177,56 @@ bool_t printCommand(nectar_target_param_t *nectarTarget){
 		case tempExt: {
 
 			vPrintNumber(nectarTarget->tempExt);
-			break;
+			vPrintString("\r\n");
+			return true;
 		}
 		case pExt: {
 
 			vPrintNumber(nectarTarget->pExt);
-			break;
+			vPrintString("\r\n");
+			return true;
 		}
 		case tempPresu: {
 
 			vPrintNumber(nectarTarget->tempPresu);
-			break;
+			vPrintString("\r\n");
+			return true;
 		}
 		case pPresu: {
 
 			vPrintNumber(nectarTarget->pPresu);
-			break;
+			vPrintString("\r\n");
+			return true;
 		}
 		case tempSalida: {
 
 			vPrintNumber(nectarTarget->tempSalida);
-			break;
+			vPrintString("\r\n");
+			return true;
 		}
 		case tPasoEstatico: {
 
 			vPrintNumber(nectarTarget->tPasoEstatico);
-			break;
+			vPrintString("\r\n");
+			return true;
 		}
 		case tPasoDinamico: {
 
 			vPrintNumber(nectarTarget->tPasoDinamico);
-			break;
+			vPrintString("\r\n");
+			return true;
 		}
 		case nCiclos: {
 
 			vPrintNumber(nectarTarget->nCiclos);
-			break;
+			vPrintString("\r\n");
+			return true;
 		}
 		case flujoSalida: {
 
 			vPrintNumber(nectarTarget->flujoSalida);
-			break;
+			vPrintString("\r\n");
+			return true;
 		}
 		default: {
 			return false;

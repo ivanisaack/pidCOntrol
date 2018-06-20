@@ -18,7 +18,7 @@
 
 float tempTarget = 0.0;
 control_pid_t pid;
-nectar_target_param_t nectarTarget;
+static nectar_target_param_t nectarTarget;
 
 const char *pcTextForMain = "\r\n PIDControl \r\n";
 
@@ -84,7 +84,6 @@ static void vMainProgramTask(void *pvParameters) {
 	float muestra = 0;
 	static size_t i = 0;
 
-
 	/* As per most tasks, this task is implemented within an infinite loop. */
 	for (;;) {
 		gpioToggle(LED1);
@@ -92,8 +91,11 @@ static void vMainProgramTask(void *pvParameters) {
 		i = 0;
 		if (processSerialPort(&nectarTarget)) {
 
-			vPrintNumber(nectarTarget.tempExt);
+			/*vPrintNumber(nectarTarget.tempExt);
 			vPrintString("\r\n");
+			vPrintString("preison");
+			vPrintNumber(nectarTarget.pExt);
+			vPrintString("\r\n");*/
 
 		}
 
