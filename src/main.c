@@ -19,6 +19,7 @@
 
 float tempTarget = 0.0;
 static nectar_target_param_t nectarTarget;
+static bool_t startProgram = false;
 
 const char *pcTextForMain = "\r\n PIDControl \r\n";
 
@@ -82,7 +83,7 @@ static void vMainProgramTask(void *pvParameters) {
 	/* As per most tasks, this task is implemented within an infinite loop. */
 	for (;;) {
 
-		processSerialResult = processSerialPort(&nectarTarget);
+		processSerialResult = processSerialPort(&nectarTarget, &startProgram);
 
 		xStatus = xQueueReceive(xTempPresuQueue, &muestra, 0);
 
@@ -101,7 +102,7 @@ static void vControlTask(void *pvParameters) {
 	BaseType_t xStatus;
 	TickType_t xLastWakeTime, xLastUartSend;
 
-/*--------------INIT CONTROL TEMPERATURA DE EXTRACCION-------------*/
+	/*--------------INIT CONTROL TEMPERATURA DE EXTRACCION-------------*/
 	control_variable_t tempExtrControlVar;
 	control_pid_t pidTempExtr;
 	float KpTempExtr, KiTempExtr, KdTempExtr, TloopTempExtr;
@@ -112,7 +113,7 @@ static void vControlTask(void *pvParameters) {
 	TloopTempExtr = 0.001;
 	PID_Init(&pidTempExtr, KpTempExtr, KiTempExtr, KdTempExtr, TloopTempExtr);
 
-/*-----------------------------------------------------------------*/
+	/*-----------------------------------------------------------------*/
 
 	xLastWakeTime = xTaskGetTickCount();
 	xLastUartSend = xLastWakeTime;
@@ -120,14 +121,20 @@ static void vControlTask(void *pvParameters) {
 	/* This task is also defined within an infinite loop. */
 	for (;;) {
 
-		tempExtrControl(&pidTempExtr, &tempExtrControlVar,(float) nectarTarget.tempExt);
+		if (startProgram == true) {
+			tempExtrControl(&pidTempExtr, &tempExtrControlVar,
+					(float) nectarTarget.tempExt);
+
+			if ((xTaskGetTickCount() - xLastUartSend) > xDelay500ms) {
+
+				xStatus = xQueueSendToBack(xTempPresuQueue,
+						&(tempExtrControlVar.B), 0);
+				xLastUartSend = xTaskGetTickCount();
+			}
+		}
 
 		vTaskDelayUntil(&xLastWakeTime, xDelay1ms);
 
-		if ((xTaskGetTickCount() - xLastUartSend) > xDelay500ms) {
-			xStatus = xQueueSendToBack(xTempPresuQueue, &(tempExtrControlVar.B), 0);
-			xLastUartSend = xTaskGetTickCount();
-		}
 	}
 }
 

@@ -26,6 +26,18 @@ typedef struct nectar_target_param_s{
 
 }nectar_target_param_t;
 
+typedef struct nectar_actual_state_s{
+
+	uint16_t tempExt;
+	uint16_t pExt;
+	uint16_t tempPresu;
+	uint16_t pPresu;
+	uint16_t tempSalida;
+	uint32_t tPasoEstatico;
+	uint32_t tPasoDinamico;
+	uint16_t Ciclo;
+
+}nectar_actual_state_t;
 
 
 

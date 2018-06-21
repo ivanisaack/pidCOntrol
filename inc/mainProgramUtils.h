@@ -33,17 +33,18 @@ typedef enum {
 	tPasoEstatico = 6,
 	tPasoDinamico = 7,
 	nCiclos = 8,
-	flujoSalida = 9
+	flujoSalida = 9,
+	comenzarCiclo = 10
 	//TODO: AGREGAR ACTIVAR CONTROL, ELEGIR PID, KP,KI,KD
 
 } comProtocolVar_t;
 
-static const size_t comProtocolVarSize = 9;
+static const size_t comProtocolVarSize = 10;
 
 void vPrintString( char * string);
 void vPrintNumber( int32_t number);
 
-bool_t processSerialPort(nectar_target_param_t * nectarTarget);
-bool_t parseCommand(nectar_target_param_t *nectarTarget);
-bool_t printCommand(nectar_target_param_t *nectarTarget);
+bool_t processSerialPort(nectar_target_param_t * nectarTarget, bool_t *startProgram);
+bool_t parseCommand(nectar_target_param_t *nectarTarget, bool_t *startProgram);
+bool_t printCommand(nectar_target_param_t *nectarTarget, bool_t *startProgram);
 #endif /* PROJECTS_CONTROLPID_INC_MAINPROGRAMUTILS_H_ */

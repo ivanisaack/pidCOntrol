@@ -3,6 +3,15 @@
 
 #include "sapi.h"
 #include "FreeRTOS.h"
+
+#define PIN_CALENTADOR_PRES GPIO0
+#define PIN_CALENTADOR_EXTR GPIO3
+
+#define PIN_SEN_PRESI_EXTR AI0
+#define PIN_SEN_TEMP_PRES AI1
+#define PIN_SEN_TEMP_EXTR AI2
+#define PIN_SEN_PRESI_PRES AI3
+
 #define MAX_TEMP 3
 #define MAX_CRITICAL_TEMP 3.2
 #define temperatureDataLen 1
