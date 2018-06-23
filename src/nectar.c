@@ -22,3 +22,5 @@ uint8_t nectarInit(nectar_target_param_t *nectarTarget, uint16_t tempExt,
 	nectarTarget->nCiclos = nCiclos;
 	nectarTarget->flujoSalida = flujoSalida;
 }
+
+

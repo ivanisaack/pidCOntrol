@@ -20,6 +20,7 @@
 float tempTarget = 0.0;
 static nectar_target_param_t nectarTarget;
 static bool_t startProgram = false;
+static nectar_actual_state_t nectarActualState;
 
 const char *pcTextForMain = "\r\n PIDControl \r\n";
 
@@ -56,6 +57,7 @@ int main(void) {
 
 	/* The queue is created to hold a maximum of 100 uint16_t values. */
 	xTempPresuQueue = xQueueCreate(1, sizeof(float));
+	//xNectarActualStateQueque = xQueueCreate(1, sizeof(nectarActualState));
 
 	xTaskCreate(vMainProgramTask, "MainProgramTask", 1000, NULL, 1, NULL);
 	xTaskCreate(vControlTask, "ControlTask", 1000, NULL, 2, NULL);
@@ -80,6 +82,7 @@ static void vMainProgramTask(void *pvParameters) {
 	char strQueque[20];
 	float muestra = 0;
 	bool_t processSerialResult;
+
 	/* As per most tasks, this task is implemented within an infinite loop. */
 	for (;;) {
 
@@ -89,7 +92,19 @@ static void vMainProgramTask(void *pvParameters) {
 
 		if (xStatus == pdPASS) {
 
-			ftoa(muestra, strQueque, 4);
+/*			muestra = scaledTempToRealTemp(muestra);
+			muestra = ((200 / 3.3) * muestra) - 50;
+			ftoa(muestra, strQueque, 2);
+			vPrintString("tempExtr = ");
+			vPrintString(strQueque);
+			vPrintNumber((int32_t) ceil(muestra));
+			vPrintString("\r\n");
+*/
+			nectarActualState.tempExt = scaledTempToRealTemp(
+					nectarActualState.tempExt);
+
+			ftoa(nectarActualState.tempExt, strQueque, 2);
+			vPrintString("tempExtrActualState = ");
 			vPrintString(strQueque);
 			vPrintString("\r\n");
 
@@ -106,13 +121,15 @@ static void vControlTask(void *pvParameters) {
 	control_variable_t tempExtrControlVar;
 	control_pid_t pidTempExtr;
 	float KpTempExtr, KiTempExtr, KdTempExtr, TloopTempExtr;
+	float scaledTempExt;
 	nectarInit(&nectarTarget, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 	KpTempExtr = 1.0;
 	KiTempExtr = 1000.0;
 	KdTempExtr = 0.0;
 	TloopTempExtr = 0.001;
-	PID_Init(&pidTempExtr, KpTempExtr, KiTempExtr, KdTempExtr, TloopTempExtr);
 
+	PID_Init(&pidTempExtr, KpTempExtr, KiTempExtr, KdTempExtr, TloopTempExtr);
+	initControlVariable(&tempExtrControlVar, 0, 0, 0);
 	/*-----------------------------------------------------------------*/
 
 	xLastWakeTime = xTaskGetTickCount();
@@ -123,9 +140,12 @@ static void vControlTask(void *pvParameters) {
 
 		if (startProgram == true) {
 			tempExtrControl(&pidTempExtr, &tempExtrControlVar,
-					(float) nectarTarget.tempExt);
+					nectarTarget.tempExt);
 
 			if ((xTaskGetTickCount() - xLastUartSend) > xDelay500ms) {
+
+				//setNectarActualState(&nectarActualState, nectarTarget);
+				nectarActualState.tempExt = tempExtrControlVar.B;
 
 				xStatus = xQueueSendToBack(xTempPresuQueue,
 						&(tempExtrControlVar.B), 0);

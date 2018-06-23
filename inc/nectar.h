@@ -14,11 +14,11 @@
 
 typedef struct nectar_target_param_s{
 
-	uint16_t tempExt;
-	uint16_t pExt;
-	uint16_t tempPresu;
-	uint16_t pPresu;
-	uint16_t tempSalida;
+	float tempExt;
+	float pExt;
+	float tempPresu;
+	float pPresu;
+	float tempSalida;
 	uint32_t tPasoEstatico;
 	uint32_t tPasoDinamico;
 	uint16_t nCiclos;
@@ -28,17 +28,17 @@ typedef struct nectar_target_param_s{
 
 typedef struct nectar_actual_state_s{
 
-	uint16_t tempExt;
-	uint16_t pExt;
-	uint16_t tempPresu;
-	uint16_t pPresu;
-	uint16_t tempSalida;
+	float tempExt;
+	float pExt;
+	float tempPresu;
+	float pPresu;
+	float tempSalida;
 	uint32_t tPasoEstatico;
 	uint32_t tPasoDinamico;
 	uint16_t Ciclo;
 
 }nectar_actual_state_t;
 
-
+void initNectarActualState(nectar_actual_state_t *nectarActualState);
 
 #endif /* PROJECTS_CONTROLPID_INC_NECTAR_H_ */

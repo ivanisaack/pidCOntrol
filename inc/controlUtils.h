@@ -20,6 +20,7 @@ typedef struct control_variable_s {
 
 } control_variable_t;
 
+void initControlVariable(control_variable_t *controlVariable, float B, float E, float X);
 void tempExtrControl(control_pid_t *pid, control_variable_t *tempExtrControlVar,
 		float tempTarget);
 void tempPresuControl(control_pid_t *pid, control_variable_t *tempPresuControlVar,

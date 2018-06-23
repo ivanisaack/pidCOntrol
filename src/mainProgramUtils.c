@@ -70,7 +70,7 @@ bool_t processSerialPort(nectar_target_param_t *nectarTarget,
 				strncpy(command, &str[1], uartDataIterator - 2);
 				command[uartDataIterator - 1] = '\0';
 
-				printCommand(nectarTarget,startProgram);
+				printCommand(nectarTarget, startProgram);
 
 				return true;
 			}
@@ -98,7 +98,11 @@ bool_t parseCommand(nectar_target_param_t *nectarTarget, bool_t *startProgram) {
 		return false;
 
 	comValue = strtol(value, &ptr, 10);
-
+	if (!(*ptr == '\0')){
+		vPrintString(responseError);
+		vPrintString("\r\n");
+		return false;
+	}
 	//vPrintNumber(comValue);
 	//vPrintString(" es eso\n");
 
@@ -106,22 +110,24 @@ bool_t parseCommand(nectar_target_param_t *nectarTarget, bool_t *startProgram) {
 
 	case tempExt: {
 
-		nectarTarget->tempExt = comValue;
+		nectarTarget->tempExt = realTempToScaledTemp((float) comValue);
+	//	vPrintNumber((int32_t)nectarTarget.tempExt);
 		return true;
 	}
 	case pExt: {
 
-		nectarTarget->pExt = comValue;
+		nectarTarget->pExt =  realPresToScaledPres((float) comValue);
+		;
 		return true;
 	}
 	case tempPresu: {
 
-		nectarTarget->tempPresu = comValue;
+		nectarTarget->tempPresu = realTempToScaledTemp((float) comValue);
 		return true;
 	}
 	case pPresu: {
 
-		nectarTarget->pPresu = comValue;
+		nectarTarget->pPresu = realPresToScaledPres((float) comValue);
 		return true;
 	}
 	case tempSalida: {
@@ -151,7 +157,7 @@ bool_t parseCommand(nectar_target_param_t *nectarTarget, bool_t *startProgram) {
 	}
 	case comenzarCiclo: {
 
-		*startProgram = (bool_t)!(comValue == 0);
+		*startProgram = (bool_t) !(comValue == 0);
 		return true;
 	}
 	default: {
@@ -179,25 +185,25 @@ bool_t printCommand(nectar_target_param_t *nectarTarget, bool_t *startProgram) {
 
 	case tempExt: {
 
-		vPrintNumber(nectarTarget->tempExt);
+		vPrintNumber((int16_t) ((200 / 3.3) * nectarTarget->tempExt) - 50);
 		vPrintString("\r\n");
 		return true;
 	}
 	case pExt: {
 
-		vPrintNumber(nectarTarget->pExt);
+		vPrintNumber((int16_t) ((100 / 3.3) * nectarTarget->pExt));
 		vPrintString("\r\n");
 		return true;
 	}
 	case tempPresu: {
 
-		vPrintNumber(nectarTarget->tempPresu);
+		vPrintNumber((int16_t) ((200 / 3.3) * nectarTarget->tempPresu) - 50);
 		vPrintString("\r\n");
 		return true;
 	}
 	case pPresu: {
 
-		vPrintNumber(nectarTarget->pPresu);
+		vPrintNumber((int16_t) ((100 / 3.3) * nectarTarget->pPresu));
 		vPrintString("\r\n");
 		return true;
 	}
@@ -231,11 +237,11 @@ bool_t printCommand(nectar_target_param_t *nectarTarget, bool_t *startProgram) {
 		vPrintString("\r\n");
 		return true;
 	}
-	case comenzarCiclo: {
+	/*case comenzarCiclo: {
 
 		vPrintNumber(*startProgram);
 		vPrintString("\r\n");
-	}
+	}*/
 
 	default: {
 		return false;

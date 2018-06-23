@@ -21,15 +21,16 @@
 #define xDelay500ms  ( (TickType_t) 500UL / portTICK_RATE_MS)
 #define xDelay1s  ( (TickType_t) 1000UL / portTICK_RATE_MS)
 
-
 typedef struct {
 	tick_t startTime;
 	tick_t duration;
 	bool_t running;
 } delayTick_t;
 
-void delayConfigII(delayTick_t * delay, tick_t duration);
-bool_t delayReadII(delayTick_t * delay);
+float scaledTempToRealTemp(float scaledTemp);
+float realTempToScaledTemp(float realTemp);
+float scaledPresToRealPres(float scaledPres);
+float realPresToScaledPres(float realPres);
 char* itoa(int value, char* result, int base);
 void reverse(char *str, int len);
 int intToStr(int x, char str[], int d);
