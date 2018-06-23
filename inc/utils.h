@@ -3,6 +3,7 @@
 
 #include "sapi.h"
 #include "FreeRTOS.h"
+#include "math.h"
 
 #define PIN_CALENTADOR_PRES GPIO0
 #define PIN_CALENTADOR_EXTR GPIO3

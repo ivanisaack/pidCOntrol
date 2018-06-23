@@ -92,14 +92,7 @@ static void vMainProgramTask(void *pvParameters) {
 
 		if (xStatus == pdPASS) {
 
-/*			muestra = scaledTempToRealTemp(muestra);
-			muestra = ((200 / 3.3) * muestra) - 50;
-			ftoa(muestra, strQueque, 2);
-			vPrintString("tempExtr = ");
-			vPrintString(strQueque);
-			vPrintNumber((int32_t) ceil(muestra));
-			vPrintString("\r\n");
-*/
+
 			nectarActualState.tempExt = scaledTempToRealTemp(
 					nectarActualState.tempExt);
 
@@ -121,7 +114,6 @@ static void vControlTask(void *pvParameters) {
 	control_variable_t tempExtrControlVar;
 	control_pid_t pidTempExtr;
 	float KpTempExtr, KiTempExtr, KdTempExtr, TloopTempExtr;
-	float scaledTempExt;
 	nectarInit(&nectarTarget, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 	KpTempExtr = 1.0;
 	KiTempExtr = 1000.0;
