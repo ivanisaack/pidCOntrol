@@ -6,15 +6,108 @@
  */
 
 #include "controlUtils.h"
+#include "FreeRTOSConfig.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
-void initControlVariable(control_variable_t *controlVariable, float B, float E, float X){
+static bool_t isValvesForExtrOpen = false;
+static bool_t isValvePresuOpen = false;
+static bool_t isValveOutOpen = false;
+
+void openPresuValve() {
+
+	gpioWrite(PIN_VALVULA_PRESU, ON);
+
+}
+
+void closePresuValve() {
+
+	gpioWrite(PIN_VALVULA_PRESU, OFF);
+
+}
+
+void openOutValve() {
+
+	gpioWrite(PIN_VALVULA_SALIDA, ON);
+
+}
+
+void closeOutValve() {
+
+	gpioWrite(PIN_VALVULA_SALIDA, OFF);
+
+}
+
+void initMaxMinControl(max_min_control_t *maxMinControlVar, float max,
+		float min) {
+
+	maxMinControlVar->max = max;
+	maxMinControlVar->min = min;
+	maxMinControlVar->acutalP = 0.0;
+}
+
+void maxMinPExtrControl(max_min_control_t *maxMinControlVar, float pTarget) {
+
+	maxMinControlVar->acutalP = ((float) (adcRead(PIN_SEN_PRESI_EXTR)) * 3.3)
+			/ 1024;
+	maxMinControlVar->E = abs(maxMinControlVar->acutalP - pTarget);
+	if ((maxMinControlVar->acutalP >= maxMinControlVar->max)
+			&& (isValvesForExtrOpen == false)) {
+
+		openPresuValve();
+		openOutValve();
+		isValvesForExtrOpen = true;
+		isValveOutOpen = true;
+
+	} else if ((maxMinControlVar->acutalP <= maxMinControlVar->min)
+			&& (isValvesForExtrOpen == true)) {
+
+		closePresuValve();
+		closeOutValve();
+		isValvesForExtrOpen = false;
+		isValveOutOpen = false;
+	}
+	vTaskDelay(xDelay100ms);
+
+}
+
+void maxMinPPresuControl(max_min_control_t *maxMinControlVar, float pTarget) {
+
+	maxMinControlVar->acutalP = ((float) (adcRead(PIN_SEN_PRESI_PRES)) * 3.3)
+			/ 1024;
+	maxMinControlVar->E = abs(maxMinControlVar->acutalP - pTarget);
+
+	if ((maxMinControlVar->acutalP <= maxMinControlVar->min)
+			&& (isValvePresuOpen == false)) {
+
+		if (isValveOutOpen){
+			closeOutValve();
+			isValveOutOpen = false;
+		}
+		openPresuValve();
+		isValvePresuOpen = true;
+
+	} else if ((maxMinControlVar->acutalP >= maxMinControlVar->max)
+			&& (isValvePresuOpen == true) && (isValveOutOpen == false)) {
+
+		closePresuValve();
+		openOutValve();
+		isValvePresuOpen = false;
+		isValveOutOpen = true;
+	}
+
+	vTaskDelay(xDelay100ms);
+
+}
+
+void initControlVariable(control_variable_t *controlVariable, float B, float E,
+		float X) {
 
 	controlVariable->B = B;
 	controlVariable->E = E;
 	controlVariable->X = X;
 
 }
-
 
 void tempExtrControl(control_pid_t *pid, control_variable_t *tempExtrControlVar,
 		float tempTarget) {
@@ -31,6 +124,7 @@ void tempExtrControl(control_pid_t *pid, control_variable_t *tempExtrControlVar,
 
 }
 
+
 void tempPresuControl(control_pid_t *pid,
 		control_variable_t *tempPresuControlVar, float tempTarget) {
 
@@ -44,6 +138,6 @@ void tempPresuControl(control_pid_t *pid,
 
 //	dacWrite(DAC, (uint16_t) (tempPresuControlVar->X * (1024 / 3.3)));
 
-	tempPresuControlVar->B = (float) ((adcRead(PIN_SEN_TEMP_PRES) - 204.6) * (200 / 819.4) - 50);
+	tempPresuControlVar->B = ((float) (adcRead(CH1)) * 3.3) / 1024;
 
 }

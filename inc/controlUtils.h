@@ -11,6 +11,9 @@
 #include "sapi.h"
 #include "utils.h"
 #include "pid.h"
+#include "FreeRTOSConfig.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
 typedef struct control_variable_s {
 
@@ -20,6 +23,22 @@ typedef struct control_variable_s {
 
 } control_variable_t;
 
+typedef struct max_min_control_s {
+
+	float max;
+	float min;
+	float acutalP;
+	float E;
+
+} max_min_control_t;
+
+void openPresuValve();
+void closePresuValve();
+void openOutValve();
+void closeOutValve();
+
+void initMaxMinControl(max_min_control_t *maxMinControlVar, float max, float min);
+void maxMinControl(max_min_control_t *maxMinControlVar, float pTarget);
 void initControlVariable(control_variable_t *controlVariable, float B, float E, float X);
 void tempExtrControl(control_pid_t *pid, control_variable_t *tempExtrControlVar,
 		float tempTarget);
