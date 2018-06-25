@@ -38,7 +38,8 @@ void openOutValve();
 void closeOutValve();
 
 void initMaxMinControl(max_min_control_t *maxMinControlVar, float max, float min);
-void maxMinControl(max_min_control_t *maxMinControlVar, float pTarget);
+void maxMinPPresuControl(max_min_control_t *maxMinControlVar, float pTarget);
+void maxMinPExtrControl(max_min_control_t *maxMinControlVar, float pTarget);
 void initControlVariable(control_variable_t *controlVariable, float B, float E, float X);
 void tempExtrControl(control_pid_t *pid, control_variable_t *tempExtrControlVar,
 		float tempTarget);

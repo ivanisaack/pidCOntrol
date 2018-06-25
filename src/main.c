@@ -15,7 +15,7 @@
 
 nectar_target_param_t nectarTarget;
 bool_t startProgram = false;
-nectar_actual_state_t nectarActualState;
+nectar_actual_param_t nectarActualState;
 rtc_t rtc;
 bool_t rtcVal = false;
 bool_t isCamExtrReady = false;
@@ -43,6 +43,15 @@ static void prvSetupHardware(void) {
 	adcConfig(ADC_ENABLE); /* ADC */
 
 	dacConfig(DAC_ENABLE); /* DAC */
+
+	uint8_t pwmVal = 0; /* 0 a 255 */
+
+	/* Configurar PWM */
+	pwmConfig(0, PWM_ENABLE);
+
+	pwmConfig(PWM7, PWM_ENABLE_OUTPUT);
+
+	pwmConfig(PWM8, PWM_ENABLE_OUTPUT);
 
 	/* Initial LED state is on, keep a live */
 	gpioWrite(LED1, ON);
@@ -82,10 +91,10 @@ int main(void) {
 
 static void vMainProgramTask(void *pvParameters) {
 
-	BaseType_t xStatus, xSemStatus;
+	BaseType_t xSemStatus;
 	char strDataToUart[20];
-	float muestra = 0;
 	bool_t processSerialResult;
+
 	/* Inicializar RTC */
 	rtcVal = rtcConfig(&rtc);
 	vTaskDelay(2 * xDelay1s);
@@ -98,14 +107,17 @@ static void vMainProgramTask(void *pvParameters) {
 		vTaskDelay(5 * xDelay1ms);
 		xSemStatus = xSemaphoreTake(xUartDatoToPrintSemaphore, 0);
 
-		//xStatus = xQueueReceive(xTempPresuQueue, &muestra, 0);
-
 		if (xSemStatus == 1) {
 
 			nectarActualState.tempExt = scaledTempToRealTemp(
 					nectarActualState.tempExt);
 
 			ftoa(nectarActualState.tempExt, strDataToUart, 2);
+
+			vPrintString("Actual state: ");
+			vPrintNumber(nectarActualState.actualState);
+			vPrintString("\r\n");
+
 			vPrintString("tempExtrActualState = ");
 			vPrintString(strDataToUart);
 			vPrintString("\r\n");
@@ -116,10 +128,10 @@ static void vMainProgramTask(void *pvParameters) {
 
 static void vControlTask(void *pvParameters) {
 
-	//BaseType_t xStatus;
+	/*--------------Inicializacion-------------*/
+
 	TickType_t xLastWakeTime, xLastUartSend;
 	size_t cyclesIterator = 0;
-	/*--------------INIT CONTROL TEMPERATURA DE EXTRACCION-------------*/
 	control_variable_t tempExtrControlVar, tempPresuControlVar;
 	control_pid_t pidTempExtr, pidTempPresu;
 
@@ -161,41 +173,67 @@ static void vControlTask(void *pvParameters) {
 	initMaxMinControl(&pExtrControlVar, maxPExtr, minPExtr);
 	initMaxMinControl(&pPresuControlVar, maxPPresu, minPPresu);
 
-	/*-----------------------------------------------------------------*/
-
 	xLastWakeTime = xTaskGetTickCount();
 	xLastUartSend = xLastWakeTime;
+
+	/*----------------------Iteracion-----------------------------------------------*/
 
 	/* This task is also defined within an infinite loop. */
 	for (;;) {
 
 		if (startProgram == true) {
+
+			nectarActualState.actualState = preparandoCamaraExtr;
+
 			while (!isCamExtrReady) {
 
 				tempExtrControl(&pidTempExtr, &tempExtrControlVar,
 						nectarTarget.tempExt);
 
-				maxMinPExtrControl(&pExtrControlVar, nectarTarget.pExt);
-//TODO: HACER UNA FUNCION PARA QUE ACA TAMBIEEN SE IMPRIMA CADA 500MS.
-				if (pExtrControlVar.E < 2.0 && tempExtrControlVar.E < 2.0) {
-					isCamExtrReady = true;
+//				maxMinPExtrControl(&pExtrControlVar, nectarTarget.pExt);
+
+				if ((xTaskGetTickCount() - xLastUartSend) > xDelay500ms) {
+
+					nectarActualState.tempExt = tempExtrControlVar.B;
+					nectarActualState.pExt = pExtrControlVar.acutalP;
+
+					xSemaphoreGive(xUartDatoToPrintSemaphore);
+					xLastUartSend = xTaskGetTickCount();
 				}
+//TODO: HACER UNA FUNCION PARA QUE ACA TAMBIEEN SE IMPRIMA CADA 500MS.
+				//			if (pExtrControlVar.E < 2.0 && tempExtrControlVar.E < 2.0) {
+				//			isCamExtrReady = true;
+				//		}
 				vTaskDelayUntil(&xLastWakeTime, xDelay1ms);
 
 			}
+
+			nectarActualState.actualState = preparandoCamaraPres;
+
 			while (!isCamPresuReady) {
 
-				//TODO: HACER UNA FUNCION PARA QUE ACA TAMBIEEN SE IMPRIMA CADA 500MS.
+				//TODO: Podria hacer un vector CON VARIABLES DE CONTROL DE T y OTRO DE P
 
 				tempPresuControl(&pidTempPresu, &tempPresuControlVar,
-						nectarTarget.tempExt);
+						nectarTarget.tempPresu);
 
-				maxMinPPresuControl(&pPresuControlVar, nectarTarget.pExt);
+				maxMinPPresuControl(&pPresuControlVar, nectarTarget.pPresu);
 
 				tempExtrControl(&pidTempExtr, &tempExtrControlVar,
 						nectarTarget.tempExt);
 
 				maxMinPExtrControl(&pExtrControlVar, nectarTarget.pExt);
+
+				if ((xTaskGetTickCount() - xLastUartSend) > xDelay500ms) {
+
+					nectarActualState.tempPresu = tempPresuControlVar.B;
+					nectarActualState.pPresu = pPresuControlVar.acutalP;
+					nectarActualState.tempExt = tempExtrControlVar.B;
+					nectarActualState.pExt = pExtrControlVar.acutalP;
+
+					xSemaphoreGive(xUartDatoToPrintSemaphore);
+					xLastUartSend = xTaskGetTickCount();
+				}
 
 				if (pPresuControlVar.E < 2.0 && tempPresuControlVar.E < 2.0) {
 					isCamPresuReady = true;
@@ -204,14 +242,25 @@ static void vControlTask(void *pvParameters) {
 				vTaskDelayUntil(&xLastWakeTime, xDelay1ms);
 
 			}
-			//TODO:HACER CONTROL DE LA CAMPARA DE PRESURIZACION SIMILAR A LA EXTREACCION PERO DISTINTO.
+
 			if (isCamExtrReady && isCamPresuReady) {
+
 				for (cyclesIterator = 0; cyclesIterator < nectarTarget.nCiclos;
 						cyclesIterator++) {
+
+					nectarActualState.Ciclo = cyclesIterator + 1;
+					nectarActualState.actualState = maserando;
+
 					rtc.min = 0;
 					rtcVal = rtcWrite(&rtc);
 
 					while (rtc.min < nectarTarget.tPasoEstatico) {
+
+						tempPresuControl(&pidTempPresu, &tempPresuControlVar,
+								nectarTarget.tempPresu);
+
+						maxMinPPresuControl(&pPresuControlVar,
+								nectarTarget.pPresu);
 
 						tempExtrControl(&pidTempExtr, &tempExtrControlVar,
 								nectarTarget.tempExt);
@@ -220,29 +269,35 @@ static void vControlTask(void *pvParameters) {
 
 						if ((xTaskGetTickCount() - xLastUartSend) > xDelay500ms) {
 
-							//setNectarActualState(&nectarActualState, nectarTarget);
+							nectarActualState.tempPresu = tempPresuControlVar.B;
+							nectarActualState.pPresu = pPresuControlVar.acutalP;
 							nectarActualState.tempExt = tempExtrControlVar.B;
-							xSemaphoreGive(xUartDatoToPrintSemaphore);
-							//	xStatus = xQueueSendToBack(xTempPresuQueue,
-							//		&(tempExtrControlVar.B), 0);
-							xLastUartSend = xTaskGetTickCount();
-							rtcVal = rtcRead(&rtc);
-							vPrintNumber(rtc.min);
-							vPrintString("\r\n");
+							nectarActualState.pExt = pExtrControlVar.acutalP;
 
+							xSemaphoreGive(xUartDatoToPrintSemaphore);
+							xLastUartSend = xTaskGetTickCount();
 						}
 
 						vTaskDelayUntil(&xLastWakeTime, xDelay1ms);
 					}
 					rtc.min = 0;
 					rtcVal = rtcWrite(&rtc);
+
+					nectarActualState.actualState = extrayendo;
+
 					while (rtc.min < nectarTarget.tPasoDinamico) {
 						rtcVal = rtcRead(&rtc);
 						//TODO:ESTO FALTA PENSARLO TODAVIA.
 						vTaskDelayUntil(&xLastWakeTime, xDelay1ms);
 
+						if ((xTaskGetTickCount() - xLastUartSend) > xDelay500ms) {
+
+							xSemaphoreGive(xUartDatoToPrintSemaphore);
+							xLastUartSend = xTaskGetTickCount();
+						}
 					}
 				}
+				startProgram = false;
 			}
 		}
 		vTaskDelayUntil(&xLastWakeTime, xDelay1ms);

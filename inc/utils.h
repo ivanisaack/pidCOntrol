@@ -38,7 +38,7 @@ typedef struct {
 
 extern nectar_target_param_t nectarTarget;
 extern bool_t startProgram;
-extern nectar_actual_state_t nectarActualState;
+extern nectar_actual_param_t nectarActualState;
 extern rtc_t rtc;
 extern bool_t rtcVal, isCamExtrReady, isCamPresuReady;
 

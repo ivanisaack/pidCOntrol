@@ -80,7 +80,7 @@ void maxMinPPresuControl(max_min_control_t *maxMinControlVar, float pTarget) {
 	if ((maxMinControlVar->acutalP <= maxMinControlVar->min)
 			&& (isValvePresuOpen == false)) {
 
-		if (isValveOutOpen){
+		if (isValveOutOpen) {
 			closeOutValve();
 			isValveOutOpen = false;
 		}
@@ -118,12 +118,13 @@ void tempExtrControl(control_pid_t *pid, control_variable_t *tempExtrControlVar,
 	tempExtrControlVar->X =
 			(3.3 < tempExtrControlVar->X) ? 3.3 : tempExtrControlVar->X;
 
+	//TODO: ESTA SERIA LA FUNCION DE PRENDER CALENTADOR
 	dacWrite(DAC, (uint16_t) (tempExtrControlVar->X * (1024 / 3.3)));
 
+	//TODO: ESTA SERIA LA FUNCION DE LEER TEMPERATURA;
 	tempExtrControlVar->B = ((float) (adcRead(CH1)) * 3.3) / 1024;
 
 }
-
 
 void tempPresuControl(control_pid_t *pid,
 		control_variable_t *tempPresuControlVar, float tempTarget) {
@@ -136,7 +137,11 @@ void tempPresuControl(control_pid_t *pid,
 	tempPresuControlVar->X =
 			(3.3 < tempPresuControlVar->X) ? 3.3 : tempPresuControlVar->X;
 
-//	dacWrite(DAC, (uint16_t) (tempPresuControlVar->X * (1024 / 3.3)));
+	//TODO: ESTA SERIA LA FUNCION DE PRENDER CALENTADOR
+	//TODO: CAMBIAR FRECUENCIA PWM A 20HZ.
+	pwmWrite(PWM7, (uint8_t) (tempPresuControlVar->X * 255 / 3.3));
+
+	//TODO: ESTA SERIA LA FUNCION DE LEER TEMPERATURA;
 
 	tempPresuControlVar->B = ((float) (adcRead(CH1)) * 3.3) / 1024;
 

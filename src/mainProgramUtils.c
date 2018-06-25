@@ -62,7 +62,15 @@ bool_t processSerialPort(nectar_target_param_t *nectarTarget,
 					strncpy(value, &str[commandLen + 2], valueLen);
 					value[valueLen] = '\0';
 
-					parseCommand(nectarTarget, startProgram);
+					if (parseCommand(nectarTarget, startProgram)){
+						vPrintString(responseConfirm);
+						vPrintString("\r\n");
+					}
+					else{
+						vPrintString(responseError);
+						vPrintString("\r\n");
+
+					}
 
 					return true;
 				}
