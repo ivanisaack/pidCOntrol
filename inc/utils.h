@@ -5,6 +5,8 @@
 #include "FreeRTOS.h"
 #include "math.h"
 #include "nectar.h"
+#include "semphr.h"
+
 
 #define PIN_CALENTADOR_PRES GPIO0
 #define PIN_CALENTADOR_EXTR GPIO3
@@ -36,11 +38,7 @@ typedef struct {
 	bool_t running;
 } delayTick_t;
 
-extern nectar_target_param_t nectarTarget;
-extern bool_t startProgram;
-extern nectar_actual_param_t nectarActualState;
-extern rtc_t rtc;
-extern bool_t rtcVal, isCamExtrReady, isCamPresuReady;
+extern SemaphoreHandle_t xUartDatoToPrintSemaphore;
 
 
 float scaledTempToRealTemp(float scaledTemp);
